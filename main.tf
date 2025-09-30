@@ -105,7 +105,7 @@ resource "azurerm_virtual_machine_extension" "iis" {
 
   settings = <<SETTINGS
     {
-        "commandToExecute": "powershell Add-WindowsFeature Web-Server; powershell Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value 'Hello from Terraform + IIS!'"
+        "commandToExecute": "powershell Add-WindowsFeature Web-Server; powershell -Command "Set-Content -Path 'C:\inetpub\wwwroot\index.html' -Value 'Hello from Terraform + IIS!'""
     }
 SETTINGS
 }
