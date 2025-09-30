@@ -8,8 +8,104 @@ provider "azurerm" {
   subscription_id = var.subscription_id
 }
 
-# Create a resource group using the generated random name
-resource "azurerm_resource_group" "example" {
-  location = "eastus"
-  name     = "MITS-TF-RG"
+# 1. Resource Group
+resource "azurerm_resource_group" "rg" {
+  name     = "rg-MITS-RG-demo"
+  location = var.resource_group_location
+}
+
+# 2. Virtual Network
+resource "azurerm_virtual_network" "vnet" {
+  name                = "vnet-demo"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# 3. Subnets
+resource "azurerm_subnet" "vm_subnet" {
+  name                 = "subnet-vm"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+resource "azurerm_subnet" "bastion_subnet" {
+  name                 = "AzureBastionSubnet" # MUST be this name
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.2.0/27"]
+}
+
+# 4. Public IP for Bastion
+resource "azurerm_public_ip" "bastion_pip" {
+  name                = "pip-bastion"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+# 5. Bastion Host
+resource "azurerm_bastion_host" "bastion" {
+  name                = "bastion-host"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                 = "bastion-ipcfg"
+    subnet_id            = azurerm_subnet.bastion_subnet.id
+    public_ip_address_id = azurerm_public_ip.bastion_pip.id
+  }
+}
+
+# 6. Network Interface for VM
+resource "azurerm_network_interface" "vm_nic" {
+  name                = "nic-vm"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.vm_subnet.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+# 7. Windows VM
+resource "azurerm_windows_virtual_machine" "vm" {
+  name                  = "vm-rdp"
+  location              = azurerm_resource_group.rg.location
+  resource_group_name   = azurerm_resource_group.rg.name
+  size                  = "Standard_B2ms"
+  admin_username        = "azureuser"
+  admin_password        = "P@ssword1234!" # <-- Use secret in production
+  network_interface_ids = [azurerm_network_interface.vm_nic.id]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
+  }
+}
+
+# 8. Custom Script Extension to Install IIS
+resource "azurerm_virtual_machine_extension" "iis" {
+  name                 = "install-iis"
+  virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.10"
+
+  settings = <<SETTINGS
+    {
+        "commandToExecute": "powershell Add-WindowsFeature Web-Server; powershell Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value 'Hello from Terraform + IIS!'"
+    }
+SETTINGS
 }
