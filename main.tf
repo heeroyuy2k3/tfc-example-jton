@@ -104,8 +104,12 @@ resource "azurerm_virtual_machine_extension" "iis" {
   type_handler_version = "1.10"
 
   settings = <<SETTINGS
-    {
-        "commandToExecute": "powershell Add-WindowsFeature Web-Server"; "powershell -Command "Set-Content -Path 'C:\inetpub\wwwroot\index.html' -Value 'Hello from Terraform + IIS!'""
-    }
+  {
+  "commandToExecute": "powershell -Command \"
+    Add-WindowsFeature Web-Server `
+    ; "Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value 'Hello from Terraform + IIS!'" `
+    ; New-Item -Path 'C:\\inetpub\\wwwroot\\test.txt' -ItemType File -Force
+  \""
+  }
 SETTINGS
 }
