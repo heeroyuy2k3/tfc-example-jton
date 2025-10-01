@@ -133,9 +133,11 @@ resource "azurerm_virtual_machine" "cisvm" {
     managed_disk_type = "Premium_LRS"
     create_option     = "FromImage"
   }
-
-  network_interface_id      = azurerm_network_interface.vm_nic.id
-  network_security_group_id = azurerm_network_security_group.cisvm_nsg.id
+  nsg_assoc{
+    network_interface_id      = azurerm_network_interface.vm_nic.id
+    network_security_group_id = azurerm_network_security_group.cisvm_nsg.id
+  }
 }
+
 
 
