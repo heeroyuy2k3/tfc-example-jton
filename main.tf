@@ -72,86 +72,47 @@ resource "azurerm_network_interface" "vm_nic" {
   }
 }
 
-# 7. Windows VM
-#resource "azurerm_windows_virtual_machine" "vm" {
-#  name                  = "vm-rdp"
-#  location              = azurerm_resource_group.rg.location
-#  resource_group_name   = azurerm_resource_group.rg.name
-#  size                  = "Standard_B2ms"
-#  admin_username        = "azureuser"
-#  admin_password        = "P@ssword1234!" # <-- Use secret in production
-#  network_interface_ids = [azurerm_network_interface.vm_nic.id]
-#
-#  os_disk {
-#    caching              = "ReadWrite"
-#    storage_account_type = "Standard_LRS"
-#  }
-#
-#  source_image_reference {
-#    publisher = "MicrosoftWindowsServer"
-#    offer     = "WindowsServer"
-#    sku       = "2019-Datacenter"
-#    version   = "latest"
-#  }
-#}
-
-# 8. Custom Script Extension to Install IIS
-#resource "azurerm_virtual_machine_extension" "iis" {
-#  name                 = "install-iis"
-#  virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
-#  publisher            = "Microsoft.Compute"
-#  type                 = "CustomScriptExtension"
-#  type_handler_version = "1.10"
-#
-#  settings = jsonencode({
-#    commandToExecute = "powershell -Command \"Add-WindowsFeature Web-Server; Set-Content -Path #'C:\\inetpub\\wwwroot\\index.html' -Value 'Hello World from IIS'; New-Item -Path 'C:\\inetpub\\wwwroot\\test.txt' #-ItemType File -Force\""
-#  })
-#}
-
-# 7. Windows VM with MS SQL Deployment
-resource "azurerm_windows_virtual_machine" "sqlvm" {
-  name                = "sql2022vm-byol"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  size                = "Standard_D4s_v3"
-  admin_username      = "azureuser"
-  admin_password      = "P@ssw0rd1234!"
+# 7. CIS Windows Server 2022 Level 1
+resource "azurerm_virtual_machine" "cisvm" {
+  name                  = "cis-l1-vm"
+  location              = azurerm_resource_group.rg.location
+  resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.vm_nic.id]
+  vm_size               = "Standard_D2s_v3"
+  delete_os_disk_on_termination = true
 
-  source_image_reference {
-    publisher = "MicrosoftSQLServer"
-    offer     = "sql2022-ws2022"
-    sku       = "Enterprise-gen2" # can be Developer-gen2, Standard-gen2, Enterprise-gen2
+  # Use the CIS hardened image from Marketplace
+  storage_image_reference {
+    publisher = "center-for-internet-security-inc"
+    offer     = "cis-windows-server-2022"      # example: CIS Windows Server 2022 Level 1 offer
+    sku       = "cis-ws2022-l1"                # SKU for the level 1 image
     version   = "latest"
   }
 
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Premium_LRS"
+  # Required plan block for marketplace images with licensing/terms
+  plan {
+    name      = "cis-ws2022-l1"
+    product   = "cis-windows-server-2022"
+    publisher = "center-for-internet-security-inc"
   }
 
-  # BYOL (Azure Hybrid Benefit for SQL)
-  license_type = "Windows_Server"
+  os_profile {
+    computer_name  = "cisvm"
+    admin_username = "azureuser"
+    admin_password = "P@ssword1234!" # <-- Use secret in production
+  }
 
-}
+  os_profile_windows_config {
+    enable_automatic_upgrades = true
+	timezone                  = "Singapore Standard Time"
+  }
 
-# 8. MS SQL Server BYOL
-resource "azurerm_mssql_virtual_machine" "sqlvm" {
-  virtual_machine_id = azurerm_windows_virtual_machine.sqlvm.id
+  storage_os_disk {
+    name              = "cisvm-osdisk"
+    caching           = "ReadWrite"
+    managed_disk_type = "Premium_LRS"
+    create_option     = "FromImage"
+  }
 
-  sql_license_type = "AHUB"  # Azure Hybrid Benefit (BYOL)
-}
-
-# 9. Custom Script for SQL Collation
-resource "azurerm_virtual_machine_extension" "sql_rebuild" {
-  name                 = "sql-rebuild"
-  virtual_machine_id   = azurerm_windows_virtual_machine.sqlvm.id
-  publisher            = "Microsoft.Compute"
-  type                 = "CustomScriptExtension"
-  type_handler_version = "1.10"
-
-  settings = jsonencode({
-    commandToExecute = "powershell -Command \"New-Item -Path 'C:\\test.txt' -ItemType File -Force; & 'C:\\Program Files\\Microsoft SQL Server\\160\\Setup Bootstrap\\SQL2022\\Setup.exe' /QUIET /ACTION=REBUILDDATABASE /INSTANCENAME=MSSQLSERVER /SQLSYSADMINACCOUNTS=azureuser /SAPWD='P@ssw0rd1234!' /SQLCOLLATION=Latin1_General_CI_AS\""
-	
-  })
+  # attach NSG, etc.
 }
