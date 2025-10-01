@@ -137,7 +137,7 @@ resource "azurerm_virtual_machine" "cisvm" {
   os_profile {
     computer_name  = "cisvm"
     admin_username = "azureuser"
-    admin_password = "P@ssword1234!" # <-- Use secret in production
+    admin_password = "P@ssword123456!" # <-- Use secret in production 14+ for CIS
   }
 
   os_profile_windows_config {
