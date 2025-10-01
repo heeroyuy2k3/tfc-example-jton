@@ -72,6 +72,26 @@ resource "azurerm_network_interface" "vm_nic" {
   }
 }
 
+# NSG to allow RDP only from Bastion
+resource "azurerm_network_security_group" "cisvm_nsg" {
+  name                = "cisvm-nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "Allow-RDP-From-Bastion"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "3389"
+    source_address_prefix      = azurerm_subnet.bastion_subnet.address_prefixes[0]
+    destination_address_prefix = "*"
+  }
+}
+
+
 # 7. CIS Windows Server 2022 Level 1 Generation 2
 resource "azurerm_virtual_machine" "cisvm" {
   name                  = "cis-ws2022-l1g2-vm"
@@ -114,30 +134,8 @@ resource "azurerm_virtual_machine" "cisvm" {
     create_option     = "FromImage"
   }
 
-  # attach NSG, etc.
-}
-
-# NSG to allow RDP only from Bastion
-resource "azurerm_network_security_group" "cisvm_nsg" {
-  name                = "cisvm-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  security_rule {
-    name                       = "Allow-RDP-From-Bastion"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "3389"
-    source_address_prefix      = azurerm_subnet.bastion_subnet.address_prefixes[0]
-    destination_address_prefix = "*"
-  }
-}
-
-# Associate NSG with CIS VM NIC
-resource "azurerm_network_interface_security_group_association" "cisvm_nic_nsg" {
   network_interface_id      = azurerm_network_interface.vm_nic.id
   network_security_group_id = azurerm_network_security_group.cisvm_nsg.id
 }
+
+
