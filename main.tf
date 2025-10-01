@@ -96,14 +96,53 @@ resource "azurerm_windows_virtual_machine" "vm" {
 }
 
 # 8. Custom Script Extension to Install IIS
-resource "azurerm_virtual_machine_extension" "iis" {
-  name                 = "install-iis"
-  virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
+#resource "azurerm_virtual_machine_extension" "iis" {
+#  name                 = "install-iis"
+#  virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
+#  publisher            = "Microsoft.Compute"
+#  type                 = "CustomScriptExtension"
+#  type_handler_version = "1.10"
+#
+#  settings = jsonencode({
+#    commandToExecute = "powershell -Command \"Add-WindowsFeature Web-Server; Set-Content -Path #'C:\\inetpub\\wwwroot\\index.html' -Value 'Hello World from IIS'; New-Item -Path 'C:\\inetpub\\wwwroot\\test.txt' #-ItemType File -Force\""
+#  })
+#}
+
+# 8. Custom Script Extension to MS SQL Server
+resource "azurerm_windows_virtual_machine" "sqlvm" {
+  name                = "sql2022vm-byol"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  size                = "Standard_D4s_v3"
+  admin_username      = "azureuser"
+  admin_password      = "P@ssw0rd1234!"
+  network_interface_ids = [azurerm_network_interface.nic.id]
+
+  source_image_reference {
+    publisher = "MicrosoftSQLServer"
+    offer     = "sql2022-ws2022"
+    sku       = "Enterprise-gen2" # can be Developer-gen2, Standard-gen2, Enterprise-gen2
+    version   = "latest"
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  # BYOL (Azure Hybrid Benefit for SQL)
+  license_type = "SQL_Server"
+}
+
+# 9. Custom Script for SQL Collation
+resource "azurerm_virtual_machine_extension" "sql_collation" {
+  name                 = "sql-collation-setup"
+  virtual_machine_id   = azurerm_windows_virtual_machine.sqlvm.id
   publisher            = "Microsoft.Compute"
   type                 = "CustomScriptExtension"
   type_handler_version = "1.10"
 
   settings = jsonencode({
-    commandToExecute = "powershell -Command \"Add-WindowsFeature Web-Server; Set-Content -Path 'C:\\inetpub\\wwwroot\\index.html' -Value 'Hello World from IIS'; New-Item -Path 'C:\\inetpub\\wwwroot\\test.txt' -ItemType File -Force\""
+    commandToExecute = "powershell -Command \"& 'C:\\Program Files\\Microsoft SQL Server\\160\\Setup Bootstrap\\SQL2022\\Setup.exe' /QUIET /ACTION=REBUILDDATABASE /INSTANCENAME=MSSQLSERVER /SQLSYSADMINACCOUNTS=azureuser /SAPWD='P@ssw0rd1234!' /SQLCOLLATION=Latin1_General_CI_AS\""
   })
 }
