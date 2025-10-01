@@ -151,20 +151,7 @@ resource "azurerm_virtual_machine_extension" "sql_rebuild" {
   type_handler_version = "1.10"
 
   settings = jsonencode({
-    commandToExecute = "powershell -Command \"& 'C:\\Program Files\\Microsoft SQL Server\\160\\Setup Bootstrap\\SQL2022\\Setup.exe' /QUIET /ACTION=REBUILDDATABASE /INSTANCENAME=MSSQLSERVER /SQLSYSADMINACCOUNTS=azureuser /SAPWD='P@ssw0rd1234!' /SQLCOLLATION=Latin1_General_CI_AS\""
+    commandToExecute = "powershell -Command \"New-Item -Path 'C:\\test.txt' -ItemType File -Force; & 'C:\\Program Files\\Microsoft SQL Server\\160\\Setup Bootstrap\\SQL2022\\Setup.exe' /QUIET /ACTION=REBUILDDATABASE /INSTANCENAME=MSSQLSERVER /SQLSYSADMINACCOUNTS=azureuser /SAPWD='P@ssw0rd1234!' /SQLCOLLATION=Latin1_General_CI_AS\""
 	
-  })
-}
-
-# 10. Custom Script Extension
-resource "azurerm_virtual_machine_extension" "custom" {
-  name                 = "custom"
-  virtual_machine_id   = azurerm_windows_virtual_machine.sqlvm.id
-  publisher            = "Microsoft.Compute"
-  type                 = "CustomScriptExtension"
-  type_handler_version = "1.10"
-  
-  settings = jsonencode({
-    commandToExecute = "powershell -Command \"New-Item -Path 'C:\\test.txt' -ItemType File -Force\""
   })
 }
