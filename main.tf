@@ -72,27 +72,27 @@ resource "azurerm_network_interface" "vm_nic" {
   }
 }
 
-# 7. CIS Windows Server 2022 Level 1
+# 7. CIS Windows Server 2022 Level 1 Generation 2
 resource "azurerm_virtual_machine" "cisvm" {
   name                  = "cis-l1-vm"
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.vm_nic.id]
-  vm_size               = "Standard_D2s_v3"
+  vm_size               = "Standard_D4s_v3"
   delete_os_disk_on_termination = true
 
   # Use the CIS hardened image from Marketplace
   storage_image_reference {
     publisher = "center-for-internet-security-inc"
-    offer     = "cis-windows-server-2022"      # example: CIS Windows Server 2022 Level 1 offer
-    sku       = "cis-ws2022-l1"                # SKU for the level 1 image
+    offer     = "cis-windows-server"      # example: CIS Windows Server 2022 Level 1 Generation 2 offer
+    sku       = "cis-windows-server2022-l1-gen2"                # SKU for the level 1 gen 2 image
     version   = "latest"
   }
 
   # Required plan block for marketplace images with licensing/terms
   plan {
-    name      = "cis-ws2022-l1"
-    product   = "cis-windows-server-2022"
+    name      = "cis-ws2022-l1g2-vm01"
+    product   = "cis-windows-server2022-l1-gen2"
     publisher = "center-for-internet-security-inc"
   }
 
