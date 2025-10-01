@@ -16,7 +16,7 @@ resource "azurerm_resource_group" "rg" {
 
 # 2. Virtual Network
 resource "azurerm_virtual_network" "vnet" {
-  name                = "vnet-demo"
+  name                = "cis-vnet"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -24,7 +24,7 @@ resource "azurerm_virtual_network" "vnet" {
 
 # 3. Subnets
 resource "azurerm_subnet" "vm_subnet" {
-  name                 = "subnet-vm"
+  name                 = "vm-subnet"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
@@ -60,19 +60,19 @@ resource "azurerm_bastion_host" "bastion" {
 }
 
 # 6. Network Interface for VM
-resource "azurerm_network_interface" "vm_nic" {
-  name                = "nic-vm"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+#resource "azurerm_network_interface" "vm_nic" {
+#  name                = "nic-vm"
+#  location            = azurerm_resource_group.rg.location
+#  resource_group_name = azurerm_resource_group.rg.name
+#
+#  ip_configuration {
+#    name                          = "internal"
+#    subnet_id                     = azurerm_subnet.vm_subnet.id
+#    private_ip_address_allocation = "Dynamic"
+#  }
+#}
 
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.vm_subnet.id
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
-# NSG to allow RDP only from Bastion
+# Network Security Group
 resource "azurerm_network_security_group" "cisvm_nsg" {
   name                = "cisvm-nsg"
   location            = azurerm_resource_group.rg.location
@@ -91,13 +91,31 @@ resource "azurerm_network_security_group" "cisvm_nsg" {
   }
 }
 
+# Network Interface for VM
+resource "azurerm_network_interface" "cisvm_nic" {
+  name                = "cisvm-nic"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.vm_subnet.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+# Associate NIC with NSG
+resource "azurerm_network_interface_security_group_association" "cisvm_nic_nsg" {
+  network_interface_id      = azurerm_network_interface.cisvm_nic.id
+  network_security_group_id = azurerm_network_security_group.cisvm_nsg.id
+}
 
 # 7. CIS Windows Server 2022 Level 1 Generation 2
 resource "azurerm_virtual_machine" "cisvm" {
   name                  = "cis-ws2022-l1g2-vm"
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
-  network_interface_ids = [azurerm_network_interface.vm_nic.id]
+  network_interface_ids = [azurerm_network_interface.cisvm_nic.id]
   vm_size               = "Standard_D4s_v3"
   delete_os_disk_on_termination = true
 
@@ -133,11 +151,6 @@ resource "azurerm_virtual_machine" "cisvm" {
     managed_disk_type = "Premium_LRS"
     create_option     = "FromImage"
   }
-  nsg_assoc{
-    network_interface_id      = azurerm_network_interface.vm_nic.id
-    network_security_group_id = azurerm_network_security_group.cisvm_nsg.id
-  }
+
+  # attach NSG, etc.
 }
-
-
-
