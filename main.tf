@@ -131,7 +131,8 @@ resource "azurerm_windows_virtual_machine" "sqlvm" {
   }
 
   # BYOL (Azure Hybrid Benefit for SQL)
-  license_type = "SQL_Server"
+  license_type = "Windows_Server"
+  sql_license_type = "AHUB"  # Azure Hybrid Benefit (BYOL)
 }
 
 # 8. Custom Script for SQL Collation
