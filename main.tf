@@ -132,6 +132,12 @@ resource "azurerm_windows_virtual_machine" "sqlvm" {
 
   # BYOL (Azure Hybrid Benefit for SQL)
   license_type = "Windows_Server"
+
+}
+
+resource "azurerm_mssql_virtual_machine" "sqlvm" {
+  virtual_machine_id = azurerm_windows_virtual_machine.sqlvm.id
+
   sql_license_type = "AHUB"  # Azure Hybrid Benefit (BYOL)
 }
 
