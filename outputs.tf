@@ -13,7 +13,7 @@ output "resource_group_name" {
 
 output "vm_name" {
   description = "The name of the virtual machine"
-  value       = azurerm_windows_virtual_machine.vm.name
+  value       = azurerm_windows_virtual_machine.sqlvm.name
 }
 
 
