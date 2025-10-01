@@ -116,7 +116,7 @@ resource "azurerm_windows_virtual_machine" "sqlvm" {
   size                = "Standard_D4s_v3"
   admin_username      = "azureuser"
   admin_password      = "P@ssw0rd1234!"
-  network_interface_ids = [azurerm_network_interface.sqlvm.id]
+  network_interface_ids = [azurerm_network_interface.vm_nic.id]
 
   source_image_reference {
     publisher = "MicrosoftSQLServer"
