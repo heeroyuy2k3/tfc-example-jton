@@ -73,27 +73,27 @@ resource "azurerm_network_interface" "vm_nic" {
 }
 
 # 7. Windows VM
-resource "azurerm_windows_virtual_machine" "vm" {
-  name                  = "vm-rdp"
-  location              = azurerm_resource_group.rg.location
-  resource_group_name   = azurerm_resource_group.rg.name
-  size                  = "Standard_B2ms"
-  admin_username        = "azureuser"
-  admin_password        = "P@ssword1234!" # <-- Use secret in production
-  network_interface_ids = [azurerm_network_interface.vm_nic.id]
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "MicrosoftWindowsServer"
-    offer     = "WindowsServer"
-    sku       = "2019-Datacenter"
-    version   = "latest"
-  }
-}
+#resource "azurerm_windows_virtual_machine" "vm" {
+#  name                  = "vm-rdp"
+#  location              = azurerm_resource_group.rg.location
+#  resource_group_name   = azurerm_resource_group.rg.name
+#  size                  = "Standard_B2ms"
+#  admin_username        = "azureuser"
+#  admin_password        = "P@ssword1234!" # <-- Use secret in production
+#  network_interface_ids = [azurerm_network_interface.vm_nic.id]
+#
+#  os_disk {
+#    caching              = "ReadWrite"
+#    storage_account_type = "Standard_LRS"
+#  }
+#
+#  source_image_reference {
+#    publisher = "MicrosoftWindowsServer"
+#    offer     = "WindowsServer"
+#    sku       = "2019-Datacenter"
+#    version   = "latest"
+#  }
+#}
 
 # 8. Custom Script Extension to Install IIS
 #resource "azurerm_virtual_machine_extension" "iis" {
@@ -108,7 +108,7 @@ resource "azurerm_windows_virtual_machine" "vm" {
 #  })
 #}
 
-# 8. Custom Script Extension to MS SQL Server
+# 7. Windows VM with MS SQL BYOL Deployment
 resource "azurerm_windows_virtual_machine" "sqlvm" {
   name                = "sql2022vm-byol"
   resource_group_name = azurerm_resource_group.rg.name
@@ -116,7 +116,7 @@ resource "azurerm_windows_virtual_machine" "sqlvm" {
   size                = "Standard_D4s_v3"
   admin_username      = "azureuser"
   admin_password      = "P@ssw0rd1234!"
-  network_interface_ids = [azurerm_network_interface.nic.id]
+  network_interface_ids = [azurerm_network_interface.vm.id]
 
   source_image_reference {
     publisher = "MicrosoftSQLServer"
@@ -134,7 +134,7 @@ resource "azurerm_windows_virtual_machine" "sqlvm" {
   license_type = "SQL_Server"
 }
 
-# 9. Custom Script for SQL Collation
+# 8. Custom Script for SQL Collation
 resource "azurerm_virtual_machine_extension" "sql_collation" {
   name                 = "sql-collation-setup"
   virtual_machine_id   = azurerm_windows_virtual_machine.sqlvm.id
