@@ -110,9 +110,9 @@ resource "azurerm_network_interface_security_group_association" "cisvm_nic_nsg" 
   network_security_group_id = azurerm_network_security_group.cisvm_nsg.id
 }
 
-# 7. CIS Windows Server 2022 Level 1 Generation 2
+# 7. CIS Windows Server 2019 Level 1 Generation 2
 resource "azurerm_virtual_machine" "cisvm" {
-  name                  = "cis-ws2022-l1g2-vm"
+  name                  = "cis-ws2019-l1g2-vm"
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
   network_interface_ids = [azurerm_network_interface.cisvm_nic.id]
@@ -122,15 +122,15 @@ resource "azurerm_virtual_machine" "cisvm" {
   # Use the CIS hardened image from Marketplace
   storage_image_reference {
     publisher = "center-for-internet-security-inc"
-    offer     = "cis-windows-server-2022-l1"      # example: CIS Windows Server 2022 Level 1 Generation 2 offer
-    sku       = "cis-windows-server-2022-l1-gen2"                # SKU for the level 1 gen 2 image
+    offer     = "cis-windows-server-2019-l1"      # example: CIS Windows Server 2019 Level 1 Generation 2 offer
+    sku       = "cis-windows-server-2019-l1-gen2"                # SKU for the level 1 gen 2 image
     version   = "latest"
   }
 
   # Required plan block for marketplace images with licensing/terms
   plan {
-    name      = "cis-windows-server-2022-l1-gen2"
-    product   = "cis-windows-server-2022-l1"
+    name      = "cis-windows-server-2019-l1-gen2"
+    product   = "cis-windows-server-2019-l1"
     publisher = "center-for-internet-security-inc"
   }
 
