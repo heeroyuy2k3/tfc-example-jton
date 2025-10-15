@@ -122,15 +122,15 @@ resource "azurerm_virtual_machine" "cisvm" {
   # Use the CIS hardened image from Marketplace
   storage_image_reference {
     publisher = "center-for-internet-security-inc"
-    offer     = "cis-windows-server-2019-l1"      # example: CIS Windows Server 2019 Level 1 Generation 2 offer
-    sku       = "cis-windows-server-2019-l1-gen2"                # SKU for the level 1 gen 2 image
+    offer     = "cis-windows-server-2019-v1-0-0-l1"      # example: CIS Windows Server 2019 Level 1 Generation 2 offer
+    sku       = "cis-ws2019-l1-gen2"                # SKU for the level 1 gen 2 image
     version   = "latest"
   }
 
   # Required plan block for marketplace images with licensing/terms
   plan {
-    name      = "cis-windows-server-2019-l1-gen2"
-    product   = "cis-windows-server-2019-l1"
+    name      = "cis-ws2019-l1-gen2"
+    product   = "cis-windows-server-2019-v1-0-0-l1"
     publisher = "center-for-internet-security-inc"
   }
 
